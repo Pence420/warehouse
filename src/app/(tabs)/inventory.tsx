@@ -1,6 +1,8 @@
 import { supabase } from "@/services/supabase";
+import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+
 
 type InventoryItem = {
   id: string;
@@ -60,12 +62,15 @@ export default function InventoryScreen() {
         data={filteredItems}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <View style={styles.card}>
+          <Pressable
+            style={styles.card}
+            onPress={() => router.push(`/item/${item.id}`)}
+          >
             <Text style={styles.itemName}>{item.name}</Text>
             <Text style={styles.itemStock}>
               {item.stock} {item.unit}
             </Text>
-          </View>
+          </Pressable>
         )}
         ListEmptyComponent={
           <Text style={styles.emptyText}>Belum ada data inventory.</Text>

@@ -18,6 +18,14 @@ export default function RootLayout() {
         name="export"
         options={{ headerShown: true, title: "Export Excel" }}
       />
+      <Stack.Screen
+        name="profile"
+        options={{ headerShown: true, title: "Profile & Settings" }}
+      />
+      <Stack.Screen
+        name="item/[id]"
+        options={{ headerShown: true, title: "Detail Barang" }}
+      />
     </Stack>
   );
 }

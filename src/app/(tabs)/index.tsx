@@ -104,6 +104,10 @@ export default function DashboardScreen() {
         <Text style={styles.linkButtonText}>Lihat Transaction History</Text>
       </Pressable>
 
+      <Pressable style={styles.linkButton} onPress={() => router.push("/profile")}>
+        <Text style={styles.linkButtonText}>Profile & Settings</Text>
+      </Pressable>
+
       <Pressable style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutButtonText}>Logout</Text>
       </Pressable>

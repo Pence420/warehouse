@@ -24,11 +24,18 @@ export default function ReceiveScreen() {
   const [txType, setTxType] = useState<TransactionType>("in");
   const [quantity, setQuantity] = useState("");
   const [notes, setNotes] = useState("");
+  const [party, setParty] = useState("");
+  const [transactionDate, setTransactionDate] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
     fetchItems();
+  }, []);
+
+  useEffect(() => {
+  const today = new Date().toISOString().split("T")[0];
+  setTransactionDate(today);
   }, []);
 
   const fetchItems = async () => {
@@ -39,6 +46,13 @@ export default function ReceiveScreen() {
 
     if (data) setItems(data);
   };
+
+  const isValidDate = (dateStr: string) => {
+  const regex = /^\d{4}-\d{2}-\d{2}$/;
+  if (!regex.test(dateStr)) return false;
+  const date = new Date(dateStr);
+  return !isNaN(date.getTime());
+};
 
   const handleSubmit = async () => {
   setErrorMsg("");
@@ -53,6 +67,11 @@ export default function ReceiveScreen() {
     return;
   }
 
+  if (!transactionDate || !isValidDate(transactionDate)) {
+  setErrorMsg("Tanggal harus diisi dengan format YYYY-MM-DD (contoh: 2026-07-16)");
+  return;
+  }
+
   if (txType === "out" && qty > selectedItem.stock) {
     setErrorMsg(`Stok ${selectedItem.name} cuma ${selectedItem.stock}, gak bisa keluar ${qty}`);
     return;
@@ -61,12 +80,14 @@ export default function ReceiveScreen() {
   setSubmitting(true);
 
   const { error: txError } = await supabase.from("transactions").insert({
-    item_id: selectedItem.id,
-    item_name: selectedItem.name,
-    type: txType,
-    quantity: qty,
-    notes: notes,
-  });
+  item_id: selectedItem.id,
+  item_name: selectedItem.name,
+  type: txType,
+  quantity: qty,
+  notes: notes,
+  party: party,
+  transaction_date: transactionDate,
+});
 
   if (txError) {
     setErrorMsg(txError.message);
@@ -93,6 +114,8 @@ export default function ReceiveScreen() {
   setSelectedItem(null);
   setQuantity("");
   setNotes("");
+  setParty("");
+  setTransactionDate(new Date().toISOString().split("T")[0]); // Reset ke tanggal hari ini lagi
   fetchItems();
 };
 
@@ -150,6 +173,22 @@ export default function ReceiveScreen() {
         value={quantity}
         onChangeText={setQuantity}
         keyboardType="numeric"
+      />
+      
+      <Text style={styles.label}>{txType === "in" ? "Supplier" : "Destination"}</Text>
+      <TextInput
+        style={styles.input}
+        placeholder={txType === "in" ? "Nama supplier" : "Tujuan pengiriman"}
+        value={party}
+        onChangeText={setParty}
+      />
+
+      <Text style={styles.label}>{txType === "in" ? "Tanggal Diterima" : "Tanggal Keluar"}</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="YYYY-MM-DD (contoh: 2026-07-16)"
+        value={transactionDate}
+        onChangeText={setTransactionDate}
       />
 
       <Text style={styles.label}>Catatan (opsional)</Text>
