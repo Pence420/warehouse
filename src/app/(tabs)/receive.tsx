@@ -78,6 +78,13 @@ export default function ReceiveScreen() {
     return;
   }
 
+  if (!party.trim()) {
+  setErrorMsg(
+    txType === "in" ? "Supplier wajib diisi" : "Destination wajib diisi"
+  );
+  return;
+}
+
   setSubmitting(true);
 
   const { error: txError } = await supabase.from("transactions").insert({

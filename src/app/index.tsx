@@ -1,9 +1,10 @@
+import { Button } from "@/components/Button";
+import { Input } from "@/components/Input";
 import { Colors } from "@/constants/colors";
 import { supabase } from "@/services/supabase";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-
+import { StyleSheet, Text, View } from "react-native";
 
 export default function LoginScreen() {
 // 1. Semua state wajib diletakkan di top-level komponen
@@ -52,31 +53,23 @@ export default function LoginScreen() {
       
       <Text style={styles.title}>Login</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Username (Email)"
-        value={username}
-        onChangeText={setUsername}
-        autoCapitalize="none"
-        keyboardType="email-address"
-      />
+    <Input
+      placeholder="Username (Email)"
+      value={username}
+      onChangeText={setUsername}
+      autoCapitalize="none"
+      keyboardType="email-address"
+    />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
+    <Input
+      placeholder="Password"
+      value={password}
+      onChangeText={setPassword}
+      secureTextEntry
+    />
 
       {/* State loading sekarang bisa diakses untuk disable tombol */}
-      <Pressable 
-        style={[styles.button, loading && styles.buttonDisabled]} 
-        onPress={handleLogin} 
-        disabled={loading}
-      >
-        <Text style={styles.buttonText}>{loading ? "Loading..." : "Login"}</Text>
-      </Pressable>
+      <Button title="Login" onPress={handleLogin} loading={loading} />
     </View>
   );
 }

@@ -1,7 +1,7 @@
 import { Colors } from "@/constants/colors";
 import { supabase } from "@/services/supabase";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, useNavigation } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
@@ -20,9 +20,18 @@ export default function DashboardScreen() {
   const [recentTx, setRecentTx] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const navigation = useNavigation();
+
   useEffect(() => {
+  fetchSummary();
+
+  const unsubscribe = navigation.addListener("focus", () => {
     fetchSummary();
-  }, []);
+  });
+
+  return unsubscribe;
+}, [navigation]);
+
 
   const fetchSummary = async () => {
     setLoading(true);

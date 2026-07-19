@@ -5,6 +5,7 @@
   "dependencies": {
     "@expo/ui": "~57.0.4",
     "@expo/vector-icons": "^15.0.2",
+    "@react-navigation/native": "^7.3.11",
     "@supabase/supabase-js": "^2.110.3",
     "expo": "~57.0.4",
     "expo-constants": "~57.0.3",
