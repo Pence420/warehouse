@@ -1,7 +1,6 @@
 import { supabase } from "@/services/supabase";
-import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 
 type InventoryItem = {
@@ -15,25 +14,70 @@ export default function InventoryScreen() {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [modalVisible, setModalVisible] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newStock, setNewStock] = useState("");
+  const [newUnit, setNewUnit] = useState("");
+  const [addErrorMsg, setAddErrorMsg] = useState("");
+  const [adding, setAdding] = useState(false);
+
+  const fetchItems = async () => {
+    const { data, error } = await supabase
+      .from("inventory_items")
+      .select("id, name, stock, unit")
+      .order("name", { ascending: true });
+
+    if (error) {
+      console.log("Error fetching inventory:", error.message);
+    } else {
+      setItems(data);
+    }
+
+    setLoading(false);
+  };
 
   useEffect(() => {
-    const fetchItems = async () => {
-      const { data, error } = await supabase
-        .from("inventory_items")
-        .select("id, name, stock, unit")
-        .order("name", { ascending: true });
-
-      if (error) {
-        console.log("Error fetching inventory:", error.message);
-      } else {
-        setItems(data);
-      }
-
-      setLoading(false);
-    };
-
     fetchItems();
   }, []);
+
+  const handleAddItem = async () => {
+  setAddErrorMsg("");
+
+  if (!newName.trim()) {
+    setAddErrorMsg("Nama barang wajib diisi");
+    return;
+  }
+  const stockNum = parseInt(newStock, 10);
+  if (isNaN(stockNum) || stockNum < 0) {
+    setAddErrorMsg("Stok awal harus angka 0 atau lebih");
+    return;
+  }
+  if (!newUnit.trim()) {
+    setAddErrorMsg("Satuan wajib diisi (contoh: pcs, box)");
+    return;
+  }
+
+  setAdding(true);
+
+  const { error } = await supabase.from("inventory_items").insert({
+    name: newName.trim(),
+    stock: stockNum,
+    unit: newUnit.trim(),
+  });
+
+  setAdding(false);
+
+  if (error) {
+    setAddErrorMsg(error.message);
+    return;
+  }
+
+  setNewName("");
+  setNewStock("");
+  setNewUnit("");
+  setModalVisible(false);
+  fetchItems();
+};
 
   const filteredItems = items.filter((item) =>
   item.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -47,39 +91,83 @@ export default function InventoryScreen() {
     );
   }
 
-  return (
-    <View style={styles.container}>
+return (
+  <View style={styles.container}>
+    <View style={styles.headerRow}>
       <Text style={styles.title}>Inventory</Text>
+      <Pressable style={styles.addButton} onPress={() => setModalVisible(true)}>
+        <Text style={styles.addButtonText}>+ Tambah</Text>
+      </Pressable>
+    </View>
 
-      <TextInput
+    <TextInput
       style={styles.searchInput}
       placeholder="Cari nama barang..."
       value={searchQuery}
       onChangeText={setSearchQuery}
     />
 
-      <FlatList
-        data={filteredItems}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
+    <FlatList
+      data={filteredItems}
+      keyExtractor={(item) => item.id}
+      renderItem={({ item }) => (
+        <View style={styles.card}>
+          <Text style={styles.itemName}>{item.name}</Text>
+          <Text style={styles.itemStock}>
+            {item.stock} {item.unit}
+          </Text>
+        </View>
+      )}
+      ListEmptyComponent={
+        <Text style={styles.emptyText}>Belum ada data inventory.</Text>
+      }
+    />
+
+    <Modal visible={modalVisible} animationType="slide" transparent>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Tambah Barang Baru</Text>
+
+          {addErrorMsg ? <Text style={styles.errorText}>{addErrorMsg}</Text> : null}
+
+          <TextInput
+            style={styles.input}
+            placeholder="Nama Barang"
+            value={newName}
+            onChangeText={setNewName}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Stok Awal (contoh: 0)"
+            value={newStock}
+            onChangeText={setNewStock}
+            keyboardType="numeric"
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Satuan (contoh: pcs, box)"
+            value={newUnit}
+            onChangeText={setNewUnit}
+          />
+
           <Pressable
-            style={styles.card}
-            onPress={() => router.push(`/item/${item.id}`)}
+            style={[styles.saveButton, adding && styles.saveButtonDisabled]}
+            onPress={handleAddItem}
+            disabled={adding}
           >
-            <Text style={styles.itemName}>{item.name}</Text>
-            <Text style={styles.itemStock}>
-              {item.stock} {item.unit}
+            <Text style={styles.saveButtonText}>
+              {adding ? "Menyimpan..." : "Simpan"}
             </Text>
           </Pressable>
-        )}
-        ListEmptyComponent={
-          <Text style={styles.emptyText}>Belum ada data inventory.</Text>
-        }
-        
-      />
-    </View>
-    
-  );
+
+          <Pressable style={styles.cancelButton} onPress={() => setModalVisible(false)}>
+            <Text style={styles.cancelButtonText}>Batal</Text>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
+  </View>
+);
 }
 
 const styles = StyleSheet.create({
@@ -109,4 +197,24 @@ const styles = StyleSheet.create({
   marginBottom: 16,
   backgroundColor: "#FFFFFF",
 },
+headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 },
+addButton: { backgroundColor: "#2563EB", borderRadius: 10, paddingVertical: 8, paddingHorizontal: 14 },
+addButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "600" },
+errorText: { color: "#EF4444", marginBottom: 12, fontWeight: "500" },
+modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" },
+modalContent: { backgroundColor: "#FFFFFF", borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24 },
+modalTitle: { fontSize: 18, fontWeight: "600", marginBottom: 16 },
+input: {
+  borderWidth: 1,
+  borderColor: "#E2E8F0",
+  borderRadius: 12,
+  padding: 14,
+  fontSize: 16,
+  marginBottom: 12,
+},
+saveButton: { backgroundColor: "#2563EB", borderRadius: 12, padding: 14, alignItems: "center" },
+saveButtonDisabled: { backgroundColor: "#93C5FD" },
+saveButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "600" },
+cancelButton: { padding: 14, alignItems: "center", marginTop: 4 },
+cancelButtonText: { color: "#64748B", fontSize: 15 },
 });

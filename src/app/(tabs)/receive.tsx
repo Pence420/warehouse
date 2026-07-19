@@ -28,6 +28,7 @@ export default function ReceiveScreen() {
   const [transactionDate, setTransactionDate] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [itemSearch, setItemSearch] = useState("");
 
   useEffect(() => {
     fetchItems();
@@ -119,6 +120,10 @@ export default function ReceiveScreen() {
   fetchItems();
 };
 
+const filteredItemOptions = items.filter((item) =>
+  item.name.toLowerCase().includes(itemSearch.toLowerCase())
+);
+
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Receive & Outgoing</Text>
@@ -144,8 +149,14 @@ export default function ReceiveScreen() {
       </View>
 
       <Text style={styles.label}>Pilih Barang</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Cari nama barang..."
+        value={itemSearch}
+        onChangeText={setItemSearch}
+      />
       <View style={styles.itemList}>
-        {items.map((item) => (
+        {filteredItemOptions.map((item) => (
           <Pressable
             key={item.id}
             style={[
@@ -165,6 +176,9 @@ export default function ReceiveScreen() {
           </Pressable>
         ))}
       </View>
+      {filteredItemOptions.length === 0 && (
+        <Text style={styles.emptySearchText}>Barang tidak ditemukan.</Text>
+      )}
 
       <Text style={styles.label}>Jumlah {txType === "in" ? "Masuk" : "Keluar"}</Text>
       <TextInput
@@ -265,4 +279,5 @@ const styles = StyleSheet.create({
   marginBottom: 12,
   fontWeight: "500",
 },
+emptySearchText: { color: "#64748B", fontSize: 14, marginTop: 8, textAlign: "center" },
 });

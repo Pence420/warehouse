@@ -1,4 +1,6 @@
+import { Colors } from "@/constants/colors";
 import { supabase } from "@/services/supabase";
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -25,12 +27,10 @@ export default function DashboardScreen() {
   const fetchSummary = async () => {
     setLoading(true);
 
-    // Total stok = jumlahin semua stock di inventory_items
     const { data: items } = await supabase.from("inventory_items").select("stock");
     const stockSum = items?.reduce((sum, item) => sum + item.stock, 0) ?? 0;
     setTotalStock(stockSum);
 
-    // Semua transaksi (buat itung total in/out + 5 terbaru)
     const { data: transactions } = await supabase
       .from("transactions")
       .select("id, item_name, type, quantity, created_at")
@@ -54,13 +54,13 @@ export default function DashboardScreen() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    router.replace("/"); // Menuju ke app/index.tsx (Login luar)
+    router.replace("/");
   };
 
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#2563EB" />
+        <ActivityIndicator size="large" color={Colors.primary} />
       </View>
     );
   }
@@ -100,21 +100,41 @@ export default function DashboardScreen() {
         ))
       )}
 
-      <Pressable style={styles.linkButton} onPress={() => router.push("/transactions")}>
-        <Text style={styles.linkButtonText}>Lihat Transaction History</Text>
-      </Pressable>
+      <Text style={styles.sectionTitle}>Menu Lainnya</Text>
 
-      <Pressable style={styles.linkButton} onPress={() => router.push("/profile")}>
-        <Text style={styles.linkButtonText}>Profile & Settings</Text>
-      </Pressable>
+      <View style={styles.menuGrid}>
+        <View style={styles.menuRow}>
+          <Pressable style={styles.menuCard} onPress={() => router.push("/transactions")}>
+            <View style={[styles.menuIcon, { backgroundColor: Colors.primaryLight }]}>
+              <Ionicons name="time-outline" size={22} color={Colors.primary} />
+            </View>
+            <Text style={styles.menuCardText}>Transaction{"\n"}History</Text>
+          </Pressable>
 
-      <Pressable style={styles.logoutButton} onPress={handleLogout}>
-        <Text style={styles.logoutButtonText}>Logout</Text>
-      </Pressable>
+          <Pressable style={styles.menuCard} onPress={() => router.push("/export")}>
+            <View style={[styles.menuIcon, { backgroundColor: Colors.successLight }]}>
+              <Ionicons name="download-outline" size={22} color={Colors.success} />
+            </View>
+            <Text style={styles.menuCardText}>Export{"\n"}Excel</Text>
+          </Pressable>
+        </View>
 
-      <Pressable style={styles.linkButton} onPress={() => router.push("/export")}>
-        <Text style={styles.linkButtonText}>Export ke Excel</Text>
-      </Pressable>
+        <View style={styles.menuRow}>
+          <Pressable style={styles.menuCard} onPress={() => router.push("/profile")}>
+            <View style={[styles.menuIcon, { backgroundColor: "#F1F5F9" }]}>
+              <Ionicons name="person-outline" size={22} color={Colors.secondary} />
+            </View>
+            <Text style={styles.menuCardText}>Profile &{"\n"}Settings</Text>
+          </Pressable>
+
+          <Pressable style={styles.menuCard} onPress={handleLogout}>
+            <View style={[styles.menuIcon, { backgroundColor: Colors.dangerLight }]}>
+              <Ionicons name="log-out-outline" size={22} color={Colors.danger} />
+            </View>
+            <Text style={styles.menuCardText}>Logout</Text>
+          </Pressable>
+        </View>
+      </View>
     </ScrollView>
   );
 }
@@ -129,44 +149,53 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
   },
-  cardIn: { backgroundColor: "#DCFCE7" },
-  cardOut: { backgroundColor: "#FEE2E2" },
+  cardIn: { backgroundColor: Colors.successLight },
+  cardOut: { backgroundColor: Colors.dangerLight },
   summaryCardFull: {
-    backgroundColor: "#EFF6FF",
+    backgroundColor: Colors.primaryLight,
     borderRadius: 16,
     padding: 16,
     marginBottom: 20,
   },
-  cardLabel: { fontSize: 13, color: "#64748B", marginBottom: 4 },
+  cardLabel: { fontSize: 13, color: Colors.textSecondary, marginBottom: 4 },
   cardValue: { fontSize: 24, fontWeight: "700" },
-  cardValueLarge: { fontSize: 32, fontWeight: "700", color: "#2563EB" },
-  sectionTitle: { fontSize: 16, fontWeight: "600", marginBottom: 12 },
-  emptyText: { color: "#64748B", marginBottom: 20 },
+  cardValueLarge: { fontSize: 32, fontWeight: "700", color: Colors.primary },
+  sectionTitle: { fontSize: 16, fontWeight: "600", marginBottom: 12, marginTop: 8 },
+  emptyText: { color: Colors.textSecondary, marginBottom: 20 },
   txRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: "#E2E8F0",
+    borderBottomColor: Colors.border,
   },
   txName: { fontSize: 15 },
-  txIn: { fontSize: 15, fontWeight: "600", color: "#22C55E" },
-  txOut: { fontSize: 15, fontWeight: "600", color: "#EF4444" },
-  linkButton: {
-    backgroundColor: "#2563EB",
-    borderRadius: 12,
-    padding: 14,
+  txIn: { fontSize: 15, fontWeight: "600", color: Colors.success },
+  txOut: { fontSize: 15, fontWeight: "600", color: Colors.danger },
+
+  menuGrid: {
+  gap: 12,
+  marginBottom: 40,
+},
+menuRow: {
+  flexDirection: "row",
+  gap: 12,
+},
+menuCard: {
+  flex: 1,
+  backgroundColor: Colors.card,
+  borderWidth: 1,
+  borderColor: Colors.border,
+  borderRadius: 16,
+  padding: 16,
+  gap: 10,
+},
+  menuIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
     alignItems: "center",
-    marginTop: 24,
+    justifyContent: "center",
   },
-  linkButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "600" },
-  logoutButton: {
-    backgroundColor: "#EF4444",
-    borderRadius: 12,
-    padding: 14,
-    alignItems: "center",
-    marginTop: 12,
-    marginBottom: 40,
-  },
-  logoutButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "600" },
+  menuCardText: { fontSize: 14, fontWeight: "600", color: Colors.textPrimary },
 });

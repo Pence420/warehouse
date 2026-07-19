@@ -1,3 +1,4 @@
+import { Colors } from "@/constants/colors";
 import { supabase } from "@/services/supabase";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
@@ -101,14 +102,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   button: {
-    backgroundColor: "#2563EB",
+    backgroundColor: Colors.primary,
     borderRadius: 12,
     padding: 14,
     alignItems: "center",
     marginTop: 8,
   },
   buttonDisabled: {
-    backgroundColor: "#93C5FD", // Membuat tombol agak pudar saat loading
+    backgroundColor: Colors.disabled, // Membuat tombol agak pudar saat loading
   },
   buttonText: {
     color: "#FFFFFF",
