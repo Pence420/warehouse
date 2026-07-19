@@ -1,4 +1,6 @@
+import { Colors } from "@/constants/colors";
 import { supabase } from "@/services/supabase";
+import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import {
   Alert,
@@ -80,7 +82,6 @@ export default function ReceiveScreen() {
 
     setSubmitting(true);
 
-    // Ambil stok TERBARU langsung dari database, bukan yang mungkin udah basi
     const { data: freshItem, error: fetchError } = await supabase
       .from("inventory_items")
       .select("stock")
@@ -143,159 +144,213 @@ export default function ReceiveScreen() {
   );
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>Receive & Outgoing</Text>
-      {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
-
-      <View style={styles.toggleRow}>
-        <Pressable
-          style={[styles.toggleButton, txType === "in" && styles.toggleButtonActiveIn]}
-          onPress={() => setTxType("in")}
-        >
-          <Text style={[styles.toggleText, txType === "in" && styles.toggleTextActive]}>
-            Barang Masuk
-          </Text>
-        </Pressable>
-        <Pressable
-          style={[styles.toggleButton, txType === "out" && styles.toggleButtonActiveOut]}
-          onPress={() => setTxType("out")}
-        >
-          <Text style={[styles.toggleText, txType === "out" && styles.toggleTextActive]}>
-            Barang Keluar
-          </Text>
-        </Pressable>
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerSubtitle}>Warehouse App</Text>
+        <Text style={styles.headerTitle}>Receive & Outgoing</Text>
       </View>
 
-      <Text style={styles.label}>Pilih Barang</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Cari nama barang..."
-        value={itemSearch}
-        onChangeText={setItemSearch}
-      />
-      <View style={styles.itemList}>
-        {filteredItemOptions.map((item) => (
+      <ScrollView style={styles.body} contentContainerStyle={{ paddingBottom: 40 }}>
+        {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
+
+        <View style={styles.toggleRow}>
           <Pressable
-            key={item.id}
-            style={[
-              styles.itemOption,
-              selectedItem?.id === item.id && styles.itemOptionSelected,
-            ]}
-            onPress={() => setSelectedItem(item)}
+            style={[styles.toggleButton, txType === "in" && styles.toggleButtonActiveIn]}
+            onPress={() => setTxType("in")}
           >
-            <Text
-              style={[
-                styles.itemOptionText,
-                selectedItem?.id === item.id && styles.itemOptionTextSelected,
-              ]}
-            >
-              {item.name} (stok: {item.stock})
+            <Ionicons
+              name="arrow-down-circle-outline"
+              size={18}
+              color={txType === "in" ? "#FFFFFF" : Colors.textSecondary}
+            />
+            <Text style={[styles.toggleText, txType === "in" && styles.toggleTextActive]}>
+              Barang Masuk
             </Text>
           </Pressable>
-        ))}
-      </View>
-      {filteredItemOptions.length === 0 && (
-        <Text style={styles.emptySearchText}>Barang tidak ditemukan.</Text>
-      )}
+          <Pressable
+            style={[styles.toggleButton, txType === "out" && styles.toggleButtonActiveOut]}
+            onPress={() => setTxType("out")}
+          >
+            <Ionicons
+              name="arrow-up-circle-outline"
+              size={18}
+              color={txType === "out" ? "#FFFFFF" : Colors.textSecondary}
+            />
+            <Text style={[styles.toggleText, txType === "out" && styles.toggleTextActive]}>
+              Barang Keluar
+            </Text>
+          </Pressable>
+        </View>
 
-      <Text style={styles.label}>Jumlah {txType === "in" ? "Masuk" : "Keluar"}</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Contoh: 10"
-        value={quantity}
-        onChangeText={setQuantity}
-        keyboardType="numeric"
-      />
+        <View style={styles.card}>
+          <Text style={styles.label}>Pilih Barang</Text>
+          <View style={styles.searchWrap}>
+            <Ionicons name="search-outline" size={16} color={Colors.textMuted} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Cari nama barang..."
+              value={itemSearch}
+              onChangeText={setItemSearch}
+              placeholderTextColor={Colors.textMuted}
+            />
+          </View>
 
-      <Text style={styles.label}>{txType === "in" ? "Supplier" : "Destination"}</Text>
-      <TextInput
-        style={styles.input}
-        placeholder={txType === "in" ? "Nama supplier" : "Tujuan pengiriman"}
-        value={party}
-        onChangeText={setParty}
-      />
+          <View style={styles.itemList}>
+            {filteredItemOptions.map((item) => (
+              <Pressable
+                key={item.id}
+                style={[
+                  styles.itemOption,
+                  selectedItem?.id === item.id && styles.itemOptionSelected,
+                ]}
+                onPress={() => setSelectedItem(item)}
+              >
+                <Text
+                  style={[
+                    styles.itemOptionText,
+                    selectedItem?.id === item.id && styles.itemOptionTextSelected,
+                  ]}
+                >
+                  {item.name} (stok: {item.stock})
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+          {filteredItemOptions.length === 0 && (
+            <Text style={styles.emptySearchText}>Barang tidak ditemukan.</Text>
+          )}
+        </View>
 
-      <Text style={styles.label}>{txType === "in" ? "Tanggal Diterima" : "Tanggal Keluar"}</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="YYYY-MM-DD (contoh: 2026-07-16)"
-        value={transactionDate}
-        onChangeText={setTransactionDate}
-      />
+        <View style={styles.card}>
+          <Text style={styles.label}>Jumlah {txType === "in" ? "Masuk" : "Keluar"}</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Contoh: 10"
+            value={quantity}
+            onChangeText={setQuantity}
+            keyboardType="numeric"
+          />
 
-      <Text style={styles.label}>Catatan (opsional)</Text>
-      <TextInput
-        style={styles.input}
-        placeholder={txType === "in" ? "Contoh: dari supplier A" : "Contoh: ke toko B"}
-        value={notes}
-        onChangeText={setNotes}
-      />
+          <Text style={styles.label}>{txType === "in" ? "Supplier" : "Destination"}</Text>
+          <TextInput
+            style={styles.input}
+            placeholder={txType === "in" ? "Nama supplier" : "Tujuan pengiriman"}
+            value={party}
+            onChangeText={setParty}
+          />
 
-      <Pressable
-        style={[styles.button, submitting && styles.buttonDisabled]}
-        onPress={handleSubmit}
-        disabled={submitting}
-      >
-        <Text style={styles.buttonText}>
-          {submitting ? "Menyimpan..." : "Simpan"}
-        </Text>
-      </Pressable>
-    </ScrollView>
+          <Text style={styles.label}>{txType === "in" ? "Tanggal Diterima" : "Tanggal Keluar"}</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="YYYY-MM-DD (contoh: 2026-07-16)"
+            value={transactionDate}
+            onChangeText={setTransactionDate}
+          />
+
+          <Text style={styles.label}>Catatan (opsional)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder={txType === "in" ? "Contoh: dari supplier A" : "Contoh: ke toko B"}
+            value={notes}
+            onChangeText={setNotes}
+          />
+        </View>
+
+        <Pressable
+          style={[styles.button, submitting && styles.buttonDisabled]}
+          onPress={handleSubmit}
+          disabled={submitting}
+        >
+          <Text style={styles.buttonText}>
+            {submitting ? "Menyimpan..." : "Simpan"}
+          </Text>
+        </Pressable>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
-  title: { fontSize: 20, fontWeight: "600", marginBottom: 16 },
-  toggleRow: { flexDirection: "row", gap: 8, marginBottom: 8 },
-  toggleButton: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 12,
-    padding: 12,
-    alignItems: "center",
+  container: { flex: 1, backgroundColor: Colors.background },
+  header: {
+    backgroundColor: Colors.primary,
+    borderBottomLeftRadius: 40,
+    paddingTop: 60,
+    paddingHorizontal: 20,
+    paddingBottom: 28,
   },
-  toggleButtonActiveIn: { backgroundColor: "#22C55E", borderColor: "#22C55E" },
-  toggleButtonActiveOut: { backgroundColor: "#EF4444", borderColor: "#EF4444" },
-  toggleText: { fontSize: 14, fontWeight: "600", color: "#64748B" },
-  toggleTextActive: { color: "#FFFFFF" },
-  label: { fontSize: 14, fontWeight: "500", marginTop: 12, marginBottom: 8 },
-  itemList: { gap: 8 },
-  itemOption: {
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 12,
-    padding: 12,
-  },
-  itemOptionSelected: {
-    borderColor: "#2563EB",
-    backgroundColor: "#EFF6FF",
-  },
-  itemOptionText: { fontSize: 15 },
-  itemOptionTextSelected: { color: "#2563EB", fontWeight: "600" },
-  input: {
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 12,
-    padding: 14,
-    fontSize: 16,
-  },
-  button: {
-    backgroundColor: "#2563EB",
-    borderRadius: 12,
-    padding: 14,
-    alignItems: "center",
-    marginTop: 20,
-    marginBottom: 40,
-  },
-  buttonDisabled: { backgroundColor: "#93C5FD" },
-  buttonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "600" },
+  headerSubtitle: { color: "#FFFFFF", opacity: 0.85, fontSize: 13, marginBottom: 2 },
+  headerTitle: { color: "#FFFFFF", fontSize: 22, fontWeight: "700" },
+  body: { flex: 1, padding: 16, marginTop: -12 },
   errorText: {
-    color: "#EF4444",
+    color: Colors.danger,
     textAlign: "center",
     marginBottom: 12,
     fontWeight: "500",
   },
-  emptySearchText: { color: "#64748B", fontSize: 14, marginTop: 8, textAlign: "center" },
+  toggleRow: { flexDirection: "row", gap: 8, marginBottom: 16 },
+  toggleButton: {
+    flex: 1,
+    flexDirection: "row",
+    gap: 6,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 14,
+    padding: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: Colors.card,
+  },
+  toggleButtonActiveIn: { backgroundColor: Colors.success, borderColor: Colors.success },
+  toggleButtonActiveOut: { backgroundColor: Colors.danger, borderColor: Colors.danger },
+  toggleText: { fontSize: 13, fontWeight: "600", color: Colors.textSecondary },
+  toggleTextActive: { color: "#FFFFFF" },
+  card: {
+    backgroundColor: Colors.card,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: 16,
+    marginBottom: 12,
+  },
+  label: { fontSize: 13, fontWeight: "600", color: Colors.textSecondary, marginBottom: 8, marginTop: 4 },
+  searchWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+  },
+  searchInput: { flex: 1, paddingVertical: 10, fontSize: 14 },
+  itemList: { gap: 8 },
+  itemOption: {
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 12,
+    padding: 12,
+  },
+  itemOptionSelected: { borderColor: Colors.primary, backgroundColor: Colors.primaryLight },
+  itemOptionText: { fontSize: 14 },
+  itemOptionTextSelected: { color: Colors.primary, fontWeight: "600" },
+  input: {
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 12,
+    padding: 14,
+    fontSize: 15,
+    marginBottom: 4,
+  },
+  button: {
+    backgroundColor: Colors.primary,
+    borderRadius: 14,
+    padding: 16,
+    alignItems: "center",
+    marginTop: 8,
+  },
+  buttonDisabled: { backgroundColor: Colors.disabled },
+  buttonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "600" },
+  emptySearchText: { color: Colors.textSecondary, fontSize: 14, marginTop: 8, textAlign: "center" },
 });
