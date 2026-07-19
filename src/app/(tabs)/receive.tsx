@@ -35,8 +35,8 @@ export default function ReceiveScreen() {
   }, []);
 
   useEffect(() => {
-  const today = new Date().toISOString().split("T")[0];
-  setTransactionDate(today);
+    const today = new Date().toISOString().split("T")[0];
+    setTransactionDate(today);
   }, []);
 
   const fetchItems = async () => {
@@ -49,87 +49,98 @@ export default function ReceiveScreen() {
   };
 
   const isValidDate = (dateStr: string) => {
-  const regex = /^\d{4}-\d{2}-\d{2}$/;
-  if (!regex.test(dateStr)) return false;
-  const date = new Date(dateStr);
-  return !isNaN(date.getTime());
-};
+    const regex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!regex.test(dateStr)) return false;
+    const date = new Date(dateStr);
+    return !isNaN(date.getTime());
+  };
 
   const handleSubmit = async () => {
-  setErrorMsg("");
+    setErrorMsg("");
 
-  if (!selectedItem) {
-    setErrorMsg("Pilih barang dulu");
-    return;
-  }
-  const qty = parseInt(quantity, 10);
-  if (!qty || qty <= 0) {
-    setErrorMsg("Jumlah harus angka lebih dari 0");
-    return;
-  }
+    if (!selectedItem) {
+      setErrorMsg("Pilih barang dulu");
+      return;
+    }
+    const qty = parseInt(quantity, 10);
+    if (!qty || qty <= 0) {
+      setErrorMsg("Jumlah harus angka lebih dari 0");
+      return;
+    }
 
-  if (!transactionDate || !isValidDate(transactionDate)) {
-  setErrorMsg("Tanggal harus diisi dengan format YYYY-MM-DD (contoh: 2026-07-16)");
-  return;
-  }
+    if (!transactionDate || !isValidDate(transactionDate)) {
+      setErrorMsg("Tanggal harus diisi dengan format YYYY-MM-DD (contoh: 2026-07-16)");
+      return;
+    }
 
-  if (txType === "out" && qty > selectedItem.stock) {
-    setErrorMsg(`Stok ${selectedItem.name} cuma ${selectedItem.stock}, gak bisa keluar ${qty}`);
-    return;
-  }
+    if (!party.trim()) {
+      setErrorMsg(txType === "in" ? "Supplier wajib diisi" : "Destination wajib diisi");
+      return;
+    }
 
-  if (!party.trim()) {
-  setErrorMsg(
-    txType === "in" ? "Supplier wajib diisi" : "Destination wajib diisi"
-  );
-  return;
-}
+    setSubmitting(true);
 
-  setSubmitting(true);
+    // Ambil stok TERBARU langsung dari database, bukan yang mungkin udah basi
+    const { data: freshItem, error: fetchError } = await supabase
+      .from("inventory_items")
+      .select("stock")
+      .eq("id", selectedItem.id)
+      .single();
 
-  const { error: txError } = await supabase.from("transactions").insert({
-  item_id: selectedItem.id,
-  item_name: selectedItem.name,
-  type: txType,
-  quantity: qty,
-  notes: notes,
-  party: party,
-  transaction_date: transactionDate,
-});
+    if (fetchError || !freshItem) {
+      setErrorMsg("Gagal cek stok terbaru, coba lagi");
+      setSubmitting(false);
+      return;
+    }
 
-  if (txError) {
-    setErrorMsg(txError.message);
+    if (txType === "out" && qty > freshItem.stock) {
+      setErrorMsg(`Stok ${selectedItem.name} sekarang cuma ${freshItem.stock}, gak bisa keluar ${qty}`);
+      setSubmitting(false);
+      return;
+    }
+
+    const { error: txError } = await supabase.from("transactions").insert({
+      item_id: selectedItem.id,
+      item_name: selectedItem.name,
+      type: txType,
+      quantity: qty,
+      notes: notes,
+      party: party,
+      transaction_date: transactionDate,
+    });
+
+    if (txError) {
+      setErrorMsg(txError.message);
+      setSubmitting(false);
+      return;
+    }
+
+    const newStock = txType === "in" ? freshItem.stock + qty : freshItem.stock - qty;
+
+    const { error: updateError } = await supabase
+      .from("inventory_items")
+      .update({ stock: newStock })
+      .eq("id", selectedItem.id);
+
     setSubmitting(false);
-    return;
-  }
 
-  const newStock =
-    txType === "in" ? selectedItem.stock + qty : selectedItem.stock - qty;
+    if (updateError) {
+      setErrorMsg(updateError.message);
+      return;
+    }
 
-  const { error: updateError } = await supabase
-    .from("inventory_items")
-    .update({ stock: newStock })
-    .eq("id", selectedItem.id);
+    Alert.alert("Sukses", `Barang ${txType === "in" ? "masuk" : "keluar"} berhasil dicatat!`);
+    setSelectedItem(null);
+    setQuantity("");
+    setNotes("");
+    setParty("");
+    setTransactionDate(new Date().toISOString().split("T")[0]);
+    fetchItems();
+  };
 
-  setSubmitting(false);
-
-  if (updateError) {
-    setErrorMsg(updateError.message);
-    return;
-  }
-
-  Alert.alert("Sukses", `Barang ${txType === "in" ? "masuk" : "keluar"} berhasil dicatat!`);
-  setSelectedItem(null);
-  setQuantity("");
-  setNotes("");
-  setParty("");
-  setTransactionDate(new Date().toISOString().split("T")[0]); // Reset ke tanggal hari ini lagi
-  fetchItems();
-};
-
-const filteredItemOptions = items.filter((item) =>
-  item.name.toLowerCase().includes(itemSearch.toLowerCase())
-);
+  const filteredItemOptions = items.filter((item) =>
+    item.name.toLowerCase().includes(itemSearch.toLowerCase())
+  );
 
   return (
     <ScrollView style={styles.container}>
@@ -195,7 +206,7 @@ const filteredItemOptions = items.filter((item) =>
         onChangeText={setQuantity}
         keyboardType="numeric"
       />
-      
+
       <Text style={styles.label}>{txType === "in" ? "Supplier" : "Destination"}</Text>
       <TextInput
         style={styles.input}
@@ -281,10 +292,10 @@ const styles = StyleSheet.create({
   buttonDisabled: { backgroundColor: "#93C5FD" },
   buttonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "600" },
   errorText: {
-  color: "#EF4444",
-  textAlign: "center",
-  marginBottom: 12,
-  fontWeight: "500",
-},
-emptySearchText: { color: "#64748B", fontSize: 14, marginTop: 8, textAlign: "center" },
+    color: "#EF4444",
+    textAlign: "center",
+    marginBottom: 12,
+    fontWeight: "500",
+  },
+  emptySearchText: { color: "#64748B", fontSize: 14, marginTop: 8, textAlign: "center" },
 });

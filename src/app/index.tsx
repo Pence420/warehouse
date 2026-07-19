@@ -1,37 +1,39 @@
-import { Button } from "@/components/Button";
-import { Input } from "@/components/Input";
 import { Colors } from "@/constants/colors";
 import { supabase } from "@/services/supabase";
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import {
+  Alert,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 
 export default function LoginScreen() {
-// 1. Semua state wajib diletakkan di top-level komponen
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-  
+
   useEffect(() => {
-  const checkSession = async () => {
-    const { data } = await supabase.auth.getSession();
-    if (data.session) {
-       router.replace("/(tabs)")
-    }
-  };
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        router.replace("/(tabs)");
+      }
+    };
+    checkSession();
+  }, []);
 
-  checkSession();
-}, []);
-
-  // 2. Fungsi login dibuat tunggal dan menggunakan async/await secara benar
   const handleLogin = async () => {
     setErrorMsg("");
     setLoading(true);
 
     const { error } = await supabase.auth.signInWithPassword({
-      // Supabase menggunakan properti 'email' untuk login default
-      email: username, 
+      email: username,
       password: password,
     });
 
@@ -42,76 +44,127 @@ export default function LoginScreen() {
       return;
     }
 
-    // Jika berhasil, arahkan ke dashboard
-     router.replace("/(tabs)")
+    router.replace("/(tabs)");
   };
 
   return (
     <View style={styles.container}>
-      {/* State errorMsg sekarang bisa diakses dengan aman di sini */}
-      {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
-      
-      <Text style={styles.title}>Login</Text>
+      <View style={styles.hero}>
+        <Text style={styles.brand}>Warehouse App</Text>
+        <Text style={styles.heroTitle}>Welcome{"\n"}Back</Text>
+      </View>
 
-    <Input
-      placeholder="Username (Email)"
-      value={username}
-      onChangeText={setUsername}
-      autoCapitalize="none"
-      keyboardType="email-address"
-    />
+      <View style={styles.card}>
+        {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
 
-    <Input
-      placeholder="Password"
-      value={password}
-      onChangeText={setPassword}
-      secureTextEntry
-    />
+        <View style={styles.inputRow}>
+          <Ionicons name="mail-outline" size={20} color={Colors.textSecondary} />
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            value={username}
+            onChangeText={setUsername}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            placeholderTextColor={Colors.textMuted}
+          />
+        </View>
 
-      {/* State loading sekarang bisa diakses untuk disable tombol */}
-      <Button title="Login" onPress={handleLogin} loading={loading} />
+        <View style={styles.inputRow}>
+          <Ionicons name="lock-closed-outline" size={20} color={Colors.textSecondary} />
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            placeholderTextColor={Colors.textMuted}
+          />
+        </View>
+
+        <Pressable
+          style={styles.forgotLink}
+          onPress={() => Alert.alert("Lupa Password", "Hubungi admin gudang untuk reset password.")}
+        >
+          <Text style={styles.forgotText}>Forgot password?</Text>
+        </Pressable>
+
+        <Pressable
+          style={[styles.loginButton, loading && styles.loginButtonDisabled]}
+          onPress={handleLogin}
+          disabled={loading}
+        >
+          <Text style={styles.loginButtonText}>{loading ? "Loading..." : "Log in"}</Text>
+        </Pressable>
+
+        <View style={styles.dividerRow}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>or</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
+        <Pressable
+          style={styles.signupButton}
+          onPress={() => Alert.alert("Akun Baru", "Hubungi admin gudang untuk pembuatan akun baru.")}
+        >
+          <Text style={styles.signupButtonText}>Hubungi Admin</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    padding: 24,
-    gap: 16,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "600",
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 12,
-    padding: 14,
-    fontSize: 16,
-  },
-  button: {
+  container: { flex: 1, backgroundColor: Colors.background },
+  hero: {
+    height: 260,
     backgroundColor: Colors.primary,
-    borderRadius: 12,
-    padding: 14,
+    borderBottomLeftRadius: 60,
+    padding: 24,
+    justifyContent: "space-between",
+    paddingTop: 60,
+  },
+  brand: { color: "#FFFFFF", fontSize: 14, fontWeight: "600", opacity: 0.9 },
+  heroTitle: { color: "#FFFFFF", fontSize: 32, fontWeight: "700", lineHeight: 38 },
+  card: {
+    flex: 1,
+    backgroundColor: Colors.card,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    marginTop: -32,
+    padding: 24,
+    paddingTop: 32,
+  },
+  errorText: { color: Colors.danger, textAlign: "center", marginBottom: 12, fontWeight: "500" },
+  inputRow: {
+    flexDirection: "row",
     alignItems: "center",
-    marginTop: 8,
+    gap: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+    paddingVertical: 12,
+    marginBottom: 16,
   },
-  buttonDisabled: {
-    backgroundColor: Colors.disabled, // Membuat tombol agak pudar saat loading
+  input: { flex: 1, fontSize: 15, color: Colors.textPrimary },
+  forgotLink: { alignSelf: "flex-end", marginBottom: 24 },
+  forgotText: { color: Colors.primary, fontSize: 13, fontWeight: "600" },
+  loginButton: {
+    backgroundColor: Colors.primary,
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: "center",
   },
-  buttonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
+  loginButtonDisabled: { backgroundColor: Colors.disabled },
+  loginButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "600" },
+  dividerRow: { flexDirection: "row", alignItems: "center", marginVertical: 24, gap: 12 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: Colors.border },
+  dividerText: { color: Colors.textMuted, fontSize: 13 },
+  signupButton: {
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: "center",
   },
-  errorText: {
-    color: "#EF4444",
-    textAlign: "center",
-    marginBottom: 8,
-  }
+  signupButtonText: { color: Colors.textPrimary, fontSize: 16, fontWeight: "600" },
 });
